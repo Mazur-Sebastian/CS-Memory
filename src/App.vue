@@ -5,7 +5,7 @@
         @click="goToDashboard"
         class="mb-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
       >
-        Powrót do Dashboard
+        Go to dashboard
       </button>
     </div>
     <router-view></router-view>

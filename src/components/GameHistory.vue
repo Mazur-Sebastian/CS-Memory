@@ -1,92 +1,77 @@
-<script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-
-interface GameRecord {
-  seed: string;
-  moves: number;
-  time: number;
-  difficulty: string;
-  date: string;
-}
-
-const router = useRouter();
-const gameHistory = ref<GameRecord[]>([]);
-
-const formatTime = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const secs = (seconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${secs}`;
-};
-
-const formatDate = (isoDate: string): string => {
-  const date = new Date(isoDate);
-  return date.toLocaleString("pl-PL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const loadGameHistory = () => {
-  try {
-    const history = JSON.parse(
-      localStorage.getItem("memoryGameHistory") || "[]"
-    );
-    gameHistory.value = history.sort(
-      (a: GameRecord, b: GameRecord) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-  } catch (e) {
-    console.warn("Błąd podczas ładowania historii gier:", e);
-    gameHistory.value = [];
-  }
-};
-
-onMounted(() => {
-  loadGameHistory();
-});
-</script>
-
 <template>
   <div
     class="flex flex-col items-center min-h-screen bg-gray-900 p-4 pt-0 w-full"
   >
     <div class="jumbotron">
-      <h1 class="title">Historia gier</h1>
+      <h1 class="title">Game History</h1>
     </div>
     <div v-if="gameHistory.length === 0" class="empty-message">
-      Brak zapisanych gier
+      No saved games
     </div>
     <div v-else class="history-table">
-      <table>
+      <table class="history-table-table">
         <thead>
           <tr>
-            <th>Seed</th>
-            <th>Poziom trudności</th>
-            <th>Ruchy</th>
-            <th>Czas</th>
-            <th>Data</th>
+            <th class="history-table-th">Seed</th>
+            <th class="history-table-th">Difficulty</th>
+            <th class="history-table-th">Moves</th>
+            <th class="history-table-th">Time</th>
+            <th class="history-table-th">Date</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="game in gameHistory" :key="game.seed">
-            <td>{{ game.seed }}</td>
-            <td>{{ game.difficulty }}</td>
-            <td>{{ game.moves }}</td>
-            <td>{{ formatTime(game.time) }}</td>
-            <td>{{ formatDate(game.date) }}</td>
+          <tr
+            v-for="game in gameHistory"
+            :key="game.seed"
+            class="history-table-tr"
+          >
+            <td class="history-table-td">{{ game.seed }}</td>
+            <td class="history-table-td">{{ game.difficulty }}</td>
+            <td class="history-table-td">{{ game.moves }}</td>
+            <td class="history-table-td">{{ formatTime(game.time) }}</td>
+            <td class="history-table-td">{{ formatDate(game.date) }}</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <button @click="router.push('/')" class="button">Wróć do menu</button>
+    <CSButton @click="router.push('/')">Back to menu</CSButton>
   </div>
 </template>
+
+<script setup lang="ts">
+import { onMounted } from "vue";
+import { useRouter } from "vue-router";
+
+import { useDateFormat } from "../composables/useDateFormat";
+
+import CSButton from "./common/CSButton.vue";
+import { useGameHistory } from "../composables/useGameHistory";
+
+const router = useRouter();
+const { formatDate, formatTime } = useDateFormat();
+const { gameHistory, loadGameHistory } = useGameHistory();
+
+// const gameHistory = ref<GameRecord[]>([]);
+
+// const loadGameHistory = () => {
+//   try {
+//     const history = JSON.parse(
+//       localStorage.getItem("memoryGameHistory") || "[]"
+//     );
+//     gameHistory.value = [...history].sort(
+//       (a: GameRecord, b: GameRecord) =>
+//         new Date(b.date).getTime() - new Date(a.date).getTime()
+//     );
+//   } catch (e) {
+//     console.warn("Błąd podczas ładowania historii gier:", e);
+//     gameHistory.value = [];
+//   }
+// };
+
+onMounted(() => {
+  loadGameHistory();
+});
+</script>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Anton&Oswald:wght@400&display=swap");
@@ -110,28 +95,21 @@ onMounted(() => {
   @apply w-full max-w-4xl mb-6 mt-24 sm:mt-32;
 }
 
-table {
+.history-table-table {
   @apply w-full border-collapse bg-gray-800 text-white shadow-md rounded-lg;
 }
 
-th,
-td {
+.history-table-th,
+.history-table-td {
   @apply border border-gray-600 px-3 py-2 text-sm sm:text-base;
   font-family: "Oswald", sans-serif;
 }
 
-th {
+.history-table-th {
   @apply bg-[#2a6b94] font-semibold;
 }
 
-tbody tr:nth-child(even) {
+.history-table-tr:nth-child(even) {
   @apply bg-gray-700;
-}
-
-.button {
-  @apply text-white px-6 py-3 hover:bg-[#2a6b94] transition-colors text-sm sm:text-base font-semibold;
-  background-color: rgb(50, 129, 172);
-  border-radius: 2px;
-  font-family: "Oswald", sans-serif;
 }
 </style>

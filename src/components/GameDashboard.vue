@@ -1,31 +1,3 @@
-<script setup lang="ts">
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-const seed = ref<string>("");
-
-const generateRandomSeed = (gridSize: number): string => {
-  const randomNum = Math.floor(Math.random() * 1000000000)
-    .toString()
-    .padStart(9, "0");
-  return `${gridSize}x${gridSize}_${randomNum}`;
-};
-
-const startGame = (gridSize?: number) => {
-  let gameSeed = seed.value.trim();
-  if (gridSize) {
-    gameSeed = generateRandomSeed(gridSize);
-    seed.value = "";
-  }
-  if (!gameSeed.match(/^(4x4|6x6|8x8)_(.+)$/)) {
-    gameSeed = generateRandomSeed(4);
-    seed.value = "";
-  }
-  router.push(`/game/${gameSeed}`);
-};
-</script>
-
 <template>
   <div
     class="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 pt-0 w-full"
@@ -34,22 +6,49 @@ const startGame = (gridSize?: number) => {
       <h1 class="title">Memory Game CS2</h1>
     </div>
     <div class="options">
-      <button @click="startGame(4)" class="button">Łatwy (4x4)</button>
-      <button @click="startGame(6)" class="button">Średni (6x6)</button>
-      <button @click="startGame(8)" class="button">Trudny (8x8)</button>
+      <CSButton @click="startGame(4)" class="button">Easy (4x4)</CSButton>
+      <CSButton @click="startGame(6)" class="button">Medium (6x6)</CSButton>
+      <CSButton @click="startGame(8)" class="button">Hard (8x8)</CSButton>
     </div>
     <div class="seed-input">
       <input
         v-model="seed"
         type="text"
-        placeholder="Wpisz seed (np. 4x4_custom123)"
+        placeholder="Enter seed (e.g. 4x4_custom123)"
         class="input"
       />
-      <button @click="startGame()" class="button">Start z seedem</button>
+      <CSButton @click="startGame()" class="button">Start with seed</CSButton>
     </div>
-    <router-link to="/history" class="history-link">Historia gier</router-link>
+    <router-link to="/history" class="history-link">Game history</router-link>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useRouter } from "vue-router";
+
+import { useSeed } from "../composables/useSeed";
+
+import CSButton from "./common/CSButton.vue";
+
+const router = useRouter();
+const { seed, generateRandomSeed } = useSeed();
+
+const startGame = (gridSize?: number) => {
+  const inputSeed = seed.value.trim();
+  const inputSeedMatched = inputSeed.match(/^(4x4|6x6|8x8)_(.+)$/);
+  const gameSeed = gridSize
+    ? generateRandomSeed(gridSize)
+    : inputSeedMatched
+    ? inputSeed
+    : generateRandomSeed(4);
+
+  if (gridSize || !inputSeedMatched) {
+    seed.value = "";
+  }
+
+  router.push(`/game/${gameSeed}`);
+};
+</script>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Anton&Oswald:wght@400&display=swap");
@@ -66,13 +65,6 @@ const startGame = (gridSize?: number) => {
 
 .options {
   @apply flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 sm:mb-6 mt-24 sm:mt-32;
-}
-
-.button {
-  @apply text-white px-4 py-2 hover:bg-[#2a6b94] transition-colors text-sm sm:text-base font-semibold;
-  background-color: rgb(50, 129, 172);
-  border-radius: 2px;
-  font-family: "Oswald", sans-serif;
 }
 
 .seed-input {
