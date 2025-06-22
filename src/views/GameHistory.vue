@@ -51,23 +51,6 @@ const router = useRouter();
 const { formatDate, formatTime } = useDateFormat();
 const { gameHistory, loadGameHistory } = useGameHistory();
 
-// const gameHistory = ref<GameRecord[]>([]);
-
-// const loadGameHistory = () => {
-//   try {
-//     const history = JSON.parse(
-//       localStorage.getItem("memoryGameHistory") || "[]"
-//     );
-//     gameHistory.value = [...history].sort(
-//       (a: GameRecord, b: GameRecord) =>
-//         new Date(b.date).getTime() - new Date(a.date).getTime()
-//     );
-//   } catch (e) {
-//     console.warn("Błąd podczas ładowania historii gier:", e);
-//     gameHistory.value = [];
-//   }
-// };
-
 onMounted(() => {
   loadGameHistory();
 });
