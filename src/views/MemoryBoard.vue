@@ -1,9 +1,10 @@
 <template>
-  <div class="container">
+  <div class="flex flex-col items-center min-h-screen bg-gray-900 p-4 w-full">
     <div class="info-bar">
       <div class="seed-display">Seed: {{ props.seed }}</div>
       <div class="stats">Moves: {{ moves }} | Time: {{ formattedTime }}</div>
       <CSButton @click="resetGame" class="button">Reset game</CSButton>
+      <CSButton @click="router.push('/')">Back to menu</CSButton>
     </div>
     <canvas ref="gameCanvas" class="game-canvas"></canvas>
     <ResetGameModal
@@ -20,15 +21,16 @@
 import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { useRouter } from "vue-router";
 
-import CSButton from "./common/CSButton.vue";
-import ResetGameModal from "./modals/ResetGameModal.vue";
+import CSButton from "../components/common/CSButton.vue";
+import ResetGameModal from "../components/modals/ResetGameModal.vue";
 
 import { useGameStats } from "../composables/useGameStats";
 import { useDateFormat } from "../composables/useDateFormat";
 
-import type { Tile, Skin } from "../types/game";
+import type { Skin } from "../types/game";
 import { useSeed } from "../composables/useSeed";
 import { useGameMemory } from "../composables/useGameMemory";
+import { shuffleArray } from "../functions/shuffleArray";
 
 const props = defineProps<{
   seed: string;
@@ -37,7 +39,7 @@ const props = defineProps<{
 const router = useRouter();
 const { saveGameState, loadGameState } = useGameStats();
 const { formatTime } = useDateFormat();
-const { parseSeed, seedHash } = useSeed();
+const { parseSeed } = useSeed();
 const {
   tiles,
   moves,
@@ -76,7 +78,7 @@ const elapsedTime = ref<number>(0);
 const showModal = ref<boolean>(false);
 const tileCount = gridSize * gridSize;
 
-updateCanvasSize(gridSize, gameCanvas.value);
+updateCanvasSize(gridSize, gameCanvas.value, ctx.value);
 
 let timerInterval: number | null = null;
 const startTimer = () => {
@@ -104,23 +106,6 @@ const resetGame = () => {
   startTimer();
 };
 
-const shuffleArray = <T>(array: T[], seed: number): T[] => {
-  const hashedSeed = seedHash(seed.toString());
-  const rng = (max: number, state: number): number => {
-    const a = 1664525;
-    const c = 1013904223;
-    state = (a * state + c) >>> 0;
-    return state % max;
-  };
-  let state = hashedSeed;
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = rng(i + 1, state);
-    state = (1664525 * state + 1013904223) >>> 0;
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-};
-
 const fetchSkins = async (): Promise<Skin[]> => {
   try {
     const response = await fetch(
@@ -142,7 +127,7 @@ const initTiles = async (): Promise<void> => {
     moves.value = savedState.moves;
     startTime.value = savedState.startTime;
     elapsedTime.value = savedState.elapsedTime;
-    updateCanvasSize(gridSize, gameCanvas.value);
+    updateCanvasSize(gridSize, gameCanvas.value, ctx.value);
     const imagePromises = tiles.value.map((tile) => {
       return new Promise<void>((resolve) => {
         if (tile.image.complete) {
@@ -154,14 +139,7 @@ const initTiles = async (): Promise<void> => {
       });
     });
     await Promise.all(imagePromises);
-    console.log("Inicjalizacja z zapisanego stanu:", {
-      tiles: tiles.value.map((t) => ({
-        flipped: t.flipped,
-        matched: t.matched,
-        flipProgress: t.flipProgress,
-      })),
-    });
-    drawTiles(0);
+    drawTiles(ctx.value);
     startTimer();
     return;
   }
@@ -175,7 +153,7 @@ const initTiles = async (): Promise<void> => {
   );
   const pairedSkins = [...selectedSkins, ...selectedSkins];
   const shuffledSkins = shuffleArray(pairedSkins, parseInt(layoutSeed));
-  updateCanvasSize(gridSize, gameCanvas.value);
+  updateCanvasSize(gridSize, gameCanvas.value, ctx.value);
 
   const imagePromises: Promise<void>[] = [];
   for (let i = 0; i < gridSize; i++) {
@@ -207,19 +185,19 @@ const initTiles = async (): Promise<void> => {
   updateTilesPosition(gridSize);
   await Promise.all(imagePromises);
   saveGameStateWithStats();
-  requestAnimationFrame(() => drawTiles(0));
+  requestAnimationFrame(() => drawTiles(ctx.value));
   startTimer();
 };
 
 const handleMouseMove = (event: MouseEvent): void => {
   if (gameCanvas.value) {
-    mouseMove(event, gameCanvas.value);
+    mouseMove(event, gameCanvas.value, ctx.value);
   }
 };
 
 const handleTouchMove = (event: TouchEvent): void => {
   if (gameCanvas.value && event.touches.length > 0) {
-    touchMove(event, gameCanvas.value);
+    touchMove(event, gameCanvas.value, ctx.value);
   }
 };
 
@@ -228,7 +206,7 @@ watch(
   async () => {
     const { gridSize: newGridSize } = parseSeed(props.seed);
     if (validGridSizes.includes(newGridSize)) {
-      updateCanvasSize(gridSize, gameCanvas.value);
+      updateCanvasSize(gridSize, gameCanvas.value, ctx.value);
       await initTiles();
     } else {
       router.push(`/game/4x4_${Date.now()}`);
@@ -245,22 +223,23 @@ const handleCanvasClick = (event: MouseEvent | TouchEvent) => {
       startTime.value,
       elapsedTime.value,
       timerInterval,
-      showModal
+      showModal,
+      ctx.value
     );
   }
 };
 
 onMounted(() => {
   if (gameCanvas.value) {
-    ctx = gameCanvas.value.getContext("2d");
-    updateCanvasSize(gridSize, gameCanvas.value);
+    ctx.value = gameCanvas.value.getContext("2d");
+    updateCanvasSize(gridSize, gameCanvas.value, ctx.value);
     initTiles();
     gameCanvas.value.addEventListener("click", handleCanvasClick);
     gameCanvas.value.addEventListener("mousemove", handleMouseMove);
     gameCanvas.value.addEventListener("touchstart", handleCanvasClick);
     gameCanvas.value.addEventListener("touchmove", handleTouchMove);
     window.addEventListener("resize", () =>
-      updateCanvasSize(gridSize, gameCanvas.value)
+      updateCanvasSize(gridSize, gameCanvas.value, ctx.value)
     );
   }
 });
@@ -272,7 +251,7 @@ onUnmounted(() => {
     gameCanvas.value.removeEventListener("touchstart", handleCanvasClick);
     gameCanvas.value.removeEventListener("touchmove", handleTouchMove);
     window.removeEventListener("resize", () =>
-      updateCanvasSize(gridSize, gameCanvas.value)
+      updateCanvasSize(gridSize, gameCanvas.value, ctx.value)
     );
   }
   if (timerInterval) clearInterval(timerInterval);
@@ -281,10 +260,6 @@ onUnmounted(() => {
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Anton&Oswald:wght@400&display=swap");
-
-.container {
-  @apply flex flex-col items-center min-h-screen bg-gray-900 p-4 w-full;
-}
 
 .info-bar {
   @apply flex flex-col sm:flex-row justify-between items-center w-full max-w-4xl mb-2 sm:mb-4 gap-2;
@@ -301,6 +276,6 @@ onUnmounted(() => {
 }
 
 .game-canvas {
-  @apply border-2 border-gray-600 bg-gray-900 touch-none w-[80vw] h-[60vh] max-w-full max-h-full;
+  @apply w-full h-full max-w-full max-h-full  border-gray-600 bg-gray-900 touch-none;
 }
 </style>

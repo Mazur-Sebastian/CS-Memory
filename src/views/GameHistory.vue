@@ -44,7 +44,7 @@ import { useRouter } from "vue-router";
 
 import { useDateFormat } from "../composables/useDateFormat";
 
-import CSButton from "./common/CSButton.vue";
+import CSButton from "../components/common/CSButton.vue";
 import { useGameHistory } from "../composables/useGameHistory";
 
 const router = useRouter();

@@ -7,16 +7,16 @@ export const useGameMemory = () => {
   const { saveGameHistory } = useGameHistory();
   const { saveGameState } = useGameStats();
 
-  const canvasWidth = ref<number>(window.innerWidth * 0.8);
-  const canvasHeight = ref(window.innerHeight * 0.6);
+  const canvasWidth = ref<number>(window.innerWidth);
+  const canvasHeight = ref(window.innerHeight - 80);
   const mousePos = ref<{ x: number; y: number }>({
     x: canvasWidth.value / 2,
     y: canvasHeight.value / 2,
   });
   const tileSize = ref<number>(0);
-  let ctx: CanvasRenderingContext2D | null;
+  const ctx: Ref<CanvasRenderingContext2D | null> = ref(null);
   const tiles = ref<Tile[]>([]);
-  const tileMargin = ref<number>(10);
+  const tileMargin = ref<number>(5);
   const flippedTiles = ref<Tile[]>([]);
   const moves = ref<number>(0);
 
@@ -39,7 +39,7 @@ export const useGameMemory = () => {
     });
   };
 
-  const drawTiles = (_timestamp: number): void => {
+  const drawTiles = (ctx: CanvasRenderingContext2D | null): void => {
     if (ctx) {
       ctx.clearRect(0, 0, canvasWidth.value, canvasHeight.value);
       tiles.value.forEach((tile) => {
@@ -131,11 +131,12 @@ export const useGameMemory = () => {
 
   const updateCanvasSize = (
     gridSize: number,
-    gameCanvas: HTMLCanvasElement | null
+    gameCanvas: HTMLCanvasElement | null,
+    ctx: CanvasRenderingContext2D | null
   ) => {
-    canvasWidth.value = window.innerWidth * 0.8;
-    canvasHeight.value = window.innerHeight * 0.6;
-    tileMargin.value = window.innerWidth < 640 ? 5 : 10;
+    canvasWidth.value = window.innerWidth;
+    canvasHeight.value = window.innerHeight - 80;
+    tileMargin.value = window.innerWidth < 640 ? 5 : 4;
     tileSize.value = Math.min(
       (canvasWidth.value - (gridSize + 1) * tileMargin.value) / gridSize,
       (canvasHeight.value - (gridSize + 1) * tileMargin.value) / gridSize
@@ -145,12 +146,13 @@ export const useGameMemory = () => {
       gameCanvas.height = canvasHeight.value;
     }
     updateTilesPosition(gridSize);
-    drawTiles(0);
+    drawTiles(ctx);
   };
 
   const animateFlip = (
     tile: Tile,
     targetProgress: number,
+    ctx: CanvasRenderingContext2D | null,
     callback?: () => void
   ): void => {
     const startProgress = tile.flipProgress;
@@ -168,7 +170,7 @@ export const useGameMemory = () => {
       const progress = Math.min(elapsed / duration, 1);
       tile.flipProgress =
         startProgress + (targetProgress - startProgress) * progress;
-      drawTiles(0);
+      drawTiles(ctx);
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else if (callback) {
@@ -183,7 +185,8 @@ export const useGameMemory = () => {
     startTime: number,
     elapsedTime: number,
     timerInterval: number | null,
-    showModal: Ref<boolean>
+    showModal: Ref<boolean>,
+    ctx: CanvasRenderingContext2D | null
   ): void => {
     if (flippedTiles.value.length === 2) {
       const [first, second] = flippedTiles.value;
@@ -207,13 +210,13 @@ export const useGameMemory = () => {
             console.warn("Błąd odtwarzania dźwięku przeładowania:", e)
           );
         setTimeout(() => {
-          animateFlip(first, 0, () => {
+          animateFlip(first, 0, ctx, () => {
             first.flipped = false;
-            drawTiles(0);
+            drawTiles(ctx);
           });
-          animateFlip(second, 0, () => {
+          animateFlip(second, 0, ctx, () => {
             second.flipped = false;
-            drawTiles(0);
+            drawTiles(ctx);
           });
           flippedTiles.value = [];
           saveGameStateWithStats(seed, startTime, elapsedTime);
@@ -229,7 +232,8 @@ export const useGameMemory = () => {
     startTime: number,
     elapsedTime: number,
     timerInterval: number | null,
-    showModal: Ref<boolean>
+    showModal: Ref<boolean>,
+    ctx: CanvasRenderingContext2D | null
   ): void => {
     const rect = gameCanvas.getBoundingClientRect();
     let x: number, y: number;
@@ -255,30 +259,32 @@ export const useGameMemory = () => {
         tile.flipped = true;
         flippedTiles.value.push(tile);
         moves.value += 1;
-        animateFlip(tile, 1);
-        checkMatch(seed, startTime, elapsedTime, timerInterval, showModal);
+        animateFlip(tile, 1, ctx);
+        checkMatch(seed, startTime, elapsedTime, timerInterval, showModal, ctx);
       }
     });
   };
 
   const mouseMove = (
     event: MouseEvent,
-    gameCanvas: HTMLCanvasElement
+    gameCanvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D | null
   ): void => {
     const rect = gameCanvas.getBoundingClientRect();
     mousePos.value.x = event.clientX - rect.left;
     mousePos.value.y = event.clientY - rect.top;
-    drawTiles(0);
+    drawTiles(ctx);
   };
 
   const touchMove = (
     event: TouchEvent,
-    gameCanvas: HTMLCanvasElement
+    gameCanvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D | null
   ): void => {
     const rect = gameCanvas.getBoundingClientRect();
     mousePos.value.x = event.touches[0].clientX - rect.left;
     mousePos.value.y = event.touches[0].clientY - rect.top;
-    drawTiles(0);
+    drawTiles(ctx);
   };
 
   return {

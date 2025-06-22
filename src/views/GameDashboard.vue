@@ -28,7 +28,7 @@ import { useRouter } from "vue-router";
 
 import { useSeed } from "../composables/useSeed";
 
-import CSButton from "./common/CSButton.vue";
+import CSButton from "../components/common/CSButton.vue";
 
 const router = useRouter();
 const { seed, generateRandomSeed } = useSeed();

@@ -23,11 +23,5 @@ export const useSeed = () => {
     return { gridSize, layoutSeed };
   };
 
-  const seedHash = (str: string): number =>
-    Array.from(str).reduce(
-      (hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0,
-      0
-    ) >>> 0;
-
-  return { seed, generateRandomSeed, parseSeed, seedHash };
+  return { seed, generateRandomSeed, parseSeed };
 };
