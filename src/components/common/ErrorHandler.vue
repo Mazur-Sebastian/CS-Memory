@@ -46,7 +46,6 @@ const getTypeStyles = (type: ErrorMessage["type"]) => {
 
 .error-toast {
   @apply flex items-center justify-between p-4 rounded-[2px] shadow-lg min-w-[250px] max-w-[400px] font-semibold text-sm;
-  font-family: "Oswald", sans-serif;
   border-width: 2px;
 }
 
@@ -56,7 +55,6 @@ const getTypeStyles = (type: ErrorMessage["type"]) => {
 
 .close-button {
   @apply ml-4 text-white hover:text-[#3281ac] transition-colors bg-transparent border-none cursor-pointer;
-  font-family: "Oswald", sans-serif;
 }
 
 .slide-enter-active,
