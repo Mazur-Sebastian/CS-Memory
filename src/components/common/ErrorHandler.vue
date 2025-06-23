@@ -40,15 +40,12 @@ const getTypeStyles = (type: ErrorMessage["type"]) => {
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400&display=swap");
-
 .error-container {
   @apply fixed top-4 right-4 z-50 flex flex-col gap-2;
 }
 
 .error-toast {
   @apply flex items-center justify-between p-4 rounded-[2px] shadow-lg min-w-[250px] max-w-[400px] font-semibold text-sm;
-  font-family: "Oswald", sans-serif;
   border-width: 2px;
 }
 
@@ -58,7 +55,6 @@ const getTypeStyles = (type: ErrorMessage["type"]) => {
 
 .close-button {
   @apply ml-4 text-white hover:text-[#3281ac] transition-colors bg-transparent border-none cursor-pointer;
-  font-family: "Oswald", sans-serif;
 }
 
 .slide-enter-active,
