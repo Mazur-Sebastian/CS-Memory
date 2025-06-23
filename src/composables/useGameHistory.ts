@@ -1,8 +1,10 @@
 import { ref } from "vue";
 
 import type { GameRecord } from "../types/gameRecord";
+import { useErrorHandler } from "./useErrorHandler";
 
 export const useGameHistory = () => {
+  const { showError } = useErrorHandler();
   const gameHistory = ref<GameRecord[]>([]);
 
   const getHistory = () =>
@@ -16,7 +18,7 @@ export const useGameHistory = () => {
           new Date(b.date).getTime() - new Date(a.date).getTime()
       );
     } catch (e) {
-      console.warn("Błąd podczas ładowania historii gier:", e);
+      showError("Error while loading game history");
       gameHistory.value = [];
     }
   };

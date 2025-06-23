@@ -2,10 +2,12 @@ import { ref, type Ref } from "vue";
 import type { Tile } from "../types/game";
 import { useGameHistory } from "./useGameHistory";
 import { useGameStats } from "./useGameStats";
+import { useErrorHandler } from "./useErrorHandler";
 
 export const useGameMemory = () => {
   const { saveGameHistory } = useGameHistory();
   const { saveGameState } = useGameStats();
+  const { showError } = useErrorHandler();
 
   const canvasWidth = ref<number>(window.innerWidth);
   const canvasHeight = ref(window.innerHeight - 80);
@@ -160,9 +162,7 @@ export const useGameMemory = () => {
     const duration = 300;
 
     if (targetProgress === 1) {
-      shellSound
-        .play()
-        .catch((e) => console.warn("Błąd odtwarzania dźwięku łuski:", e));
+      shellSound.play().catch((e) => showError("Error playing shell sound"));
     }
 
     const animate = (currentTime: number): void => {
@@ -193,9 +193,7 @@ export const useGameMemory = () => {
       if (first.skin.id === second.skin.id) {
         first.matched = true;
         second.matched = true;
-        shotSound
-          .play()
-          .catch((e) => console.warn("Błąd odtwarzania dźwięku strzału:", e));
+        shotSound.play().catch((e) => showError("Error playing shoot sound"));
         flippedTiles.value = [];
         saveGameStateWithStats(seed, startTime, elapsedTime);
         if (tiles.value.every((tile) => tile.matched)) {
@@ -206,9 +204,7 @@ export const useGameMemory = () => {
       } else {
         reloadSound
           .play()
-          .catch((e) =>
-            console.warn("Błąd odtwarzania dźwięku przeładowania:", e)
-          );
+          .catch((e) => showError("Error playing reload sound"));
         setTimeout(() => {
           animateFlip(first, 0, ctx, () => {
             first.flipped = false;

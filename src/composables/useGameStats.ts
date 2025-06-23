@@ -1,4 +1,5 @@
 import type { Tile } from "../types/game";
+import { useErrorHandler } from "./useErrorHandler";
 
 export type Stats = {
   seed: string;
@@ -10,6 +11,8 @@ export type Stats = {
 };
 
 export const useGameStats = () => {
+  const { showError } = useErrorHandler();
+
   const saveGameState = ({
     seed,
     tiles,
@@ -57,7 +60,7 @@ export const useGameStats = () => {
           return img;
         })(),
       }));
-      // Pusta lista, bo nie zapisujemy flipped
+
       const loadedFlippedTiles: Tile[] = [];
 
       return {
@@ -68,7 +71,7 @@ export const useGameStats = () => {
         elapsedTime: state.elapsedTime,
       };
     } catch (e) {
-      console.warn("Błąd podczas ładowania stanu gry:", e);
+      showError("Error loading game state");
       return null;
     }
   };
