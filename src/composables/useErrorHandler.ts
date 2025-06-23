@@ -8,7 +8,7 @@ interface ErrorMessage {
   duration?: number;
 }
 
-export function useErrorHandler() {
+export const useErrorHandler = () => {
   const errors: Ref<ErrorMessage[]> = ref([]);
 
   const showError = (
@@ -39,4 +39,4 @@ export function useErrorHandler() {
     clearError,
     clearAllErrors,
   };
-}
+};
