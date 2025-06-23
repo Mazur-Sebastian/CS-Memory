@@ -40,8 +40,6 @@ const getTypeStyles = (type: ErrorMessage["type"]) => {
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400&display=swap");
-
 .error-container {
   @apply fixed top-4 right-4 z-50 flex flex-col gap-2;
 }
